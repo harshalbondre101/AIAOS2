@@ -467,18 +467,24 @@ def create_app(test_config=None):
 
 
     # --------------------- MENU HANDLING ---------------------- #
-
+        
     @app.route('/check_threshold')
     def check_threshold():
         try:
             menu = read_csv('menu.csv')
-            MINIMUM_COUNT = int(request.args.get('min_count', 5))
             
-            items_below_threshold = [item for item in menu if int(item['quantity']) < MINIMUM_COUNT]
-            
+            items_below_threshold = []
+            for item in menu:
+                quantity = int(item['quantity'])
+                minimum_count = int(item['low_count'])
+                
+                if quantity < minimum_count:
+                    items_below_threshold.append(item)
+                    
             return jsonify(items_below_threshold), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
 
     @app.route('/get_menu')
     def api_menu():
@@ -533,9 +539,9 @@ def create_app(test_config=None):
     file_paths = {
         'Inventory': 'inventory.csv',
         'Menu': 'menu.csv',
-        'Mappings': 'mappings2.excel'
+        'Mappings': 'mappings.csv'
     }
-
+    """
     @app.route('/load_data/<filename>', methods=['GET'])
     def load_data(filename):
         if filename in file_paths:
@@ -546,6 +552,33 @@ def create_app(test_config=None):
                 df = pd.read_excel(file_path)
             data = df.to_dict(orient='records')
             return jsonify(data)
+        return jsonify({'error': 'File not found'}), 404
+        """
+    @app.route('/load_data/<filename>', methods=['GET'])
+    def load_data(filename):
+        if filename in file_paths:
+            file_path = file_paths[filename]
+
+            # Additional logic for mappings.csv
+            if filename == 'Mappings':
+                items = []
+                with open(file_path, newline='') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for row in reader:
+                        item_name = row['item']
+                        ingredients = row['ingredients']
+                        items.append({'item': item_name, 'ingredients': ingredients})
+                return jsonify(items)
+
+            elif file_path.endswith('.csv'):
+                df = pd.read_csv(file_path)
+            else:
+                df = pd.read_excel(file_path)
+
+            # Convert dataframe to dictionary format
+            data = df.to_dict(orient='records')
+            return jsonify(data)
+
         return jsonify({'error': 'File not found'}), 404
 
     @app.route('/save_data/<filename>', methods=['POST'])
@@ -671,6 +704,21 @@ def create_app(test_config=None):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+        
+    
+    @app.route('/display')
+    def display_csv():
+        csv_file_path = 'mappings.csv'
+        items = []
+
+        with open(csv_file_path, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                item_name = row['item']
+                ingredients = row['ingredients']
+                items.append({'item': item_name, 'ingredients': ingredients})
+
+        return render_template('display.html', items=items)
 
 
 
