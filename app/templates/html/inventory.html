@@ -173,11 +173,11 @@
                 <thead>
                     <tr>
                         <th>Item Name</th>
-                        <th>Quantity</th>
+                        
                     </tr>
                 </thead>
                 <tbody id="menu-table-body">
-                    <!-- Menu items will be loaded here dynamically -->
+                    <!-- Menu items will be loaded here dynamically   <th>Quantity</th> -->
                 </tbody>
             </table>
         </div>
@@ -290,7 +290,7 @@
         // Load inventory data on page load
         loadInventory();
 
-        // Function to load menu data
+        // Function to load menu data <td>${item.quantity}</td>
         function loadMenu() {
             $.ajax({
                 url: '/get_menu_with_availability',
@@ -303,7 +303,7 @@
                         tableBody.append(`
                             <tr ${rowClass}>
                                 <td>${item.item_name}</td>
-                                <td>${item.quantity}</td>
+                                
                             </tr>
                         `);
                     });
@@ -367,10 +367,10 @@
 
 
         // Check inventory every 10 minutes (600,000 milliseconds)
-        setInterval(checkInventory, 600000);
+        //setInterval(checkInventory, 600000);
 
         // Initial check on page load
-        checkInventory();
+       // checkInventory();
 
 
 
