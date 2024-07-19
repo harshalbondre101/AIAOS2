@@ -14,25 +14,41 @@
         }
         .container {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
             flex-wrap: wrap;
+            gap: 20px;
             max-width: 1000px;
             margin: 0 auto;
+        }
+        .ing_container {
+            display: flex;
+            flex-wrap: wrap;
             gap: 20px;
+            max-width: 700px;
+            margin: 0 auto;
         }
         .card {
+            flex: 1 1 300px; /* Set initial width to 300px, flex-grow and flex-shrink to 1 */
+            max-width: 100%; /* Allow cards to grow */
             background-color: #ffffff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-            width: calc(50% - 20px);
-            flex: 1;
-            min-width: 300px;
-            max-height: 700px;
+            max-height: 500px;
             overflow-y: auto;
         }
+        .ing_card {
+            flex: 1 1 300px; /* Set initial width to 300px, flex-grow and flex-shrink to 1 */
+            max-width: 500px; /* Allow cards to grow */
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
         .card-header {
             background-color: #343a40; /* Dark background color */
             color: #ffffff;
@@ -60,6 +76,7 @@
         th {
             background-color: #343a40; /* Dark background color */
             color: #ffffff;
+            font-size: 12px;
         }
         tr:hover {
             background-color: #f1f1f1;
@@ -147,6 +164,8 @@
 </head>
 <body>
     
+            
+
         
     <div class="container">
         <div class="card">
@@ -156,42 +175,75 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Ingredient</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody id="inventory-table-body">
-                    <!-- Inventory items will be loaded here dynamically -->
-                </tbody>
-            </table>
+                    <th>Count</th>
+                    <th>Ingredient</th>
+                    
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Inventory rows will be dynamically inserted here <th>Low Count</th>-->
+            </tbody>
+        </table>
+    </div>
+        
+    <div class="card">
+        <div class="card-header">
+            Menu
         </div>
-        <div class="card">
-            <div class="card-header">
-                Menu
-            </div>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Item Name</th>
-                        
-                    </tr>
-                </thead>
-                <tbody id="menu-table-body">
-                    <!-- Menu items will be loaded here dynamically   <th>Quantity</th> -->
-                </tbody>
-            </table>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                Missing Ingredients
-            </div>
-            <div id="missing-ingredients-list">
-                <!-- Missing ingredients will be listed here dynamically -->
-            </div>
-        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Quantity</th>
+                    <th>Minimum</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="menu-table-body">
+                <!-- Menu items will be loaded here dynamically -->
+            </tbody>
+        </table>
     </div>
     
-    <!-- Sidebar for Manage Inventory & Menu -->
+
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Missing Ingredients Card -->
+            
+                <div class="card">
+                    <div class="card-header">
+                        Missing Ingredients
+                    </div>
+                    <div class="card-body" id="missing-ingredients-list">
+                        <!-- Missing ingredients will be listed here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ingredients Required Card -->
+            
+                <div class="card">
+                    
+                        
+                    
+                    <div class="card-header">
+                        Ingredients Required to Prepare Item
+                    </div>
+                    <button class="btn btn-primary" id="save-button">Save</button>
+                    <div class="card-body" id="mappings-list">
+                        <!-- Mappings will be listed here dynamically -->
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+
+    
+    <!-- Sidebar for Manage Inventory & Menu 
     <div class="sidebar">
         <div >
             
@@ -241,12 +293,13 @@
             </form>
         </div>
     </div>
+    -->
 
     <!--      SIDEBAR2        -->
     <div class="sidebar2">
         <div >
             <a href="/" class="btn-back">Back to Dashboard</a>
-            <a href="/check" class="btn-back">Edit Excel Sheets</a>
+            <!-- <a href="/check" class="btn-back">Edit Excel Sheets</a> -->
             <div class="below-threshold">
                 <h6 hidden>Set Minimum Count for not available items in MENU:</h6>
                 <form id="min-count-form" hidden>
@@ -256,79 +309,157 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">Set</button>
                 </form>
-                <h5 style="margin-top: 20px;">Low item count:</h5>
+                <h5 style="margin-top: 20px;" class="card-header">Low item count:</h5>
                 <ul id="below-threshold-list">
                     <!-- Items below threshold will be listed here -->
                 </ul>
             </div>
+            
         </div>
     </div>
     
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Function to load inventory data
-        function loadInventory() {
-            $.ajax({
-                url: '/get_inventory',
-                type: 'GET',
-                success: function(data) {
-                    const tableBody = $('#inventory-table-body');
-                    tableBody.empty();
-                    data.forEach(function(item) {
-                        tableBody.append(`
-                            <tr>
-                                <td>${item.ingredient}</td>
-                                <td>${item.count}</td>
-                            </tr>
-                        `);
-                    });
-                }
-            });
-        }
 
-        // Load inventory data on page load
+
+    $(document).ready(function() {
+        function loadInventory() {
+    fetch('/get_inventory')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('table tbody');
+            tbody.innerHTML = ''; // Clear the current table body
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+
+                // Create input for 'count' column
+                const countCell = document.createElement('td');
+                const countInput = document.createElement('input');
+                countInput.type = 'number';
+                countInput.value = item.count;
+                countInput.classList.add('form-control', 'bg-transparent', 'border-0'); // Added classes for Bootstrap styling
+                countCell.style.backgroundColor = row.style.backgroundColor; // Match input bg to row bg
+                countCell.appendChild(countInput);
+
+                // Create ingredient cell
+                const ingredientCell = document.createElement('td');
+                ingredientCell.innerText = item.ingredient;
+
+                // Create action cell with save button
+                const actionCell = document.createElement('td');
+                const saveButton = document.createElement('button');
+                saveButton.classList.add('btn', 'btn-primary');
+                saveButton.innerText = 'Save';
+                saveButton.addEventListener('click', function() {
+                    const data = {
+                        ingredient: item.ingredient,
+                        count: countInput.value
+                    };
+
+                    fetch('/save_update_inventory', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        alert(result.message);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+                actionCell.appendChild(saveButton);
+
+                // Append cells to row
+                row.appendChild(countCell);
+                row.appendChild(ingredientCell);
+                row.appendChild(actionCell);
+
+                // Append row to tbody
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading inventory:', error);
+        });
+}
+
+
+        
+
         loadInventory();
 
-        // Function to load menu data <td>${item.quantity}</td>
         function loadMenu() {
-            $.ajax({
-                url: '/get_menu_with_availability',
-                type: 'GET',
-                success: function(data) {
-                    const tableBody = $('#menu-table-body');
-                    tableBody.empty();
-                    data.forEach(function(item) {
-                        const rowClass = item.available ? '' : 'class="unavailable"';
-                        tableBody.append(`
-                            <tr ${rowClass}>
-                                <td>${item.item_name}</td>
-                                
-                            </tr>
-                        `);
+    $.ajax({
+        url: '/get_menu_with_availability', // Endpoint to fetch menu items
+        type: 'GET',
+        success: function(data) {
+            const tableBody = $('#menu-table-body');
+            tableBody.empty();
+            loadBelowThreshold();
+
+            data.forEach(function(item) {
+                const row = $('<tr>');
+                row.append(`<td contenteditable="true">${item.item_name}</td>`);
+                row.append(`<td contenteditable="true">${item.quantity}</td>`);
+                row.append(`<td contenteditable="true">${item.low_count}</td>`);
+
+                const saveButton = $('<button>')
+                    .addClass('save-btn btn btn-primary')
+                    .text('Save')
+                    .on('click', function() {
+                        const updatedItem = {
+                            item_name: row.find('td:nth-child(1)').text(),
+                            quantity: parseInt(row.find('td:nth-child(2)').text()),
+                            low_count: parseInt(row.find('td:nth-child(3)').text())
+                        };
+
+                        $.ajax({
+                            url: '/save_update_menu', // Endpoint to save menu item
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(updatedItem),
+                            success: function(response) {
+                                alert(response.message);
+                            },
+                            error: function(error) {
+                                console.error('Error saving menu item:', error);
+                            }
+                        });
                     });
-                }
+
+                row.append($('<td>').append(saveButton));
+                tableBody.append(row);
+
+                
             });
+        },
+        error: function(error) {
+            console.error('Error loading menu items:', error);
         }
+    });
+}
 
-        // Load menu data on page load
-        loadMenu();
+    // Call loadMenu function when the document is ready
+    loadMenu();
 
-        // Function to load items below threshold
+
         function loadBelowThreshold(minCount) {
             $.ajax({
                 url: '/get_items_below_threshold_and_missing_ingredients',
                 method: 'GET',
-                data: {
-                    min_count: minCount
-                },
+                data: { min_count: minCount },
                 success: function(response) {
                     const belowThresholdList = $('#below-threshold-list');
-                    belowThresholdList.empty(); // Clear previous items
+                    belowThresholdList.empty();
 
                     if (response.length > 0) {
                         response.forEach(function(item) {
-                            belowThresholdList.append(`<li>${item.item_name}`);
+                            belowThresholdList.append(`<li>${item.item_name}</li>`);
                         });
                     } else {
                         belowThresholdList.append('<li>No items below the threshold.</li>');
@@ -341,54 +472,42 @@
             });
         }
 
-
-        // Load items below threshold on page load
-        loadBelowThreshold(5); // Default to 5 initially
+        loadBelowThreshold(5);
 
         function checkInventory() {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', '/send_alert_bot', true);
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/send_alert_bot', true);
 
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.length > 0) {
-                        alert("Alert: Some items are below the threshold. Check your Telegram for details.");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.length > 0) {
+                            alert("Alert: Some items are below the threshold. Check your Telegram for details.");
+                        }
+                    } else {
+                        console.error('Error checking inventory:', xhr.statusText);
                     }
-                } else {
-                    console.error('Error checking inventory:', xhr.statusText);
                 }
-            }
-        };
+            };
 
-        xhr.send();
-    }
+            xhr.send();
+        }
 
+        setInterval(checkInventory, 600000);
+        checkInventory();
 
-        // Check inventory every 10 minutes (600,000 milliseconds)
-        //setInterval(checkInventory, 600000);
-
-        // Initial check on page load
-       // checkInventory();
-
-
-
-
-        // Check for items below threshold every 30 seconds
         setInterval(function() {
-            var minCount = $('#min_count').val(); // Get current minimum count from input field
+            var minCount = $('#min_count').val();
             loadBelowThreshold(minCount);
-        }, 30000); // 30 seconds interval
+        }, 30000);
 
-        // Submit form to set minimum count
         $('#min-count-form').submit(function(event) {
             event.preventDefault();
-            var minCount = $('#min_count').val(); // Get minimum count from input field
-            loadBelowThreshold(minCount); // Load items below threshold based on new minimum count
+            var minCount = $('#min_count').val();
+            loadBelowThreshold(minCount);
         });
 
-        // Submit form to manage item (add/update)
         $('#inventory-form').submit(function(event) {
             event.preventDefault();
             $.ajax({
@@ -396,15 +515,14 @@
                 type: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    loadInventory(); // Reload inventory table
-                    // Clear form fields after successful submission
+                    loadInventory();
                     $('#ingredient').val('');
                     $('#count').val('');
+                    loadBelowThreshold(5);
                 }
             });
         });
 
-        // Submit form to delete item
         $('#delete-form').submit(function(event) {
             event.preventDefault();
             $.ajax({
@@ -412,14 +530,13 @@
                 type: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    loadInventory(); // Reload inventory table
-                    // Clear form field after successful deletion
+                    loadInventory();
                     $('#delete_item_name').val('');
+                    loadBelowThreshold(5);
                 }
             });
         });
 
-        // Submit form to manage menu item (add/update)
         $('#menu-form').submit(function(event) {
             event.preventDefault();
             $.ajax({
@@ -427,15 +544,14 @@
                 type: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    loadMenu(); // Reload menu table
-                    // Clear form fields after successful submission
+                    loadMenu();
                     $('#menu-item').val('');
                     $('#quantity').val('');
+                    loadBelowThreshold(5);
                 }
             });
         });
 
-        // Submit form to delete menu item
         $('#delete-menu-form').submit(function(event) {
             event.preventDefault();
             $.ajax({
@@ -443,44 +559,86 @@
                 type: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    loadMenu(); // Reload menu table
-                    // Clear form field after successful deletion
+                    loadMenu();
                     $('#delete_menu_item').val('');
+                    loadBelowThreshold(5);
                 }
             });
         });
 
-        // Function to load missing ingredients
         function loadMissingIngredients() {
-    $.ajax({
-        url: '/get_missing_ingredients',
-        type: 'GET',
-        success: function(data) {
-            const missingIngredientsList = $('#missing-ingredients-list');
-            missingIngredientsList.empty();
-            for (const [item, ingredients] of Object.entries(data)) {
-                missingIngredientsList.append(`<h5>${item}</h5>`);
-                ingredients.forEach(function(ingredient) {
-                    missingIngredientsList.append(`
-                        <p>${ingredient.ingredient}: Required - ${ingredient.required}, Available - ${ingredient.available}</p>
-                    `);
-                });
-            }
+            $.ajax({
+                url: '/get_missing_ingredients',
+                type: 'GET',
+                success: function(data) {
+                    const missingIngredientsList = $('#missing-ingredients-list');
+                    missingIngredientsList.empty();
+                    for (const [item, ingredients] of Object.entries(data)) {
+                        missingIngredientsList.append(`<h6>${item}</h6>`);
+                        ingredients.forEach(function(ingredient) {
+                            missingIngredientsList.append(`
+                                <p>${ingredient.ingredient}: Required - ${ingredient.required}, Available - ${ingredient.available}</p>
+                            `);
+                        });
+                    }
+                }
+            });
         }
+
+        loadMissingIngredients();
+        setInterval(loadMissingIngredients, 30000);
+
+
+
+        // Load mappings on page load
+        loadMappings();
+
+// Function to load mappings
+function loadMappings() {
+    $.getJSON('/load_data/Mappings', function(data) {
+        let mappingsList = $('#mappings-list');
+        mappingsList.empty();
+        data.forEach(function(mapping, index) {
+            let item = mapping.item;
+            let ingredients = mapping.ingredients;
+            mappingsList.append(`
+                <div class="mb-3">
+                    <label for="item-${index}" class="form-label">Item</label>
+                    <input type="text" class="form-control" id="item-${index}" value="${item}">
+                    <label for="ingredients-${index}" class="form-label mt-2">Ingredients</label>
+                    <input type="text" class="form-control" id="ingredients-${index}" value="${ingredients}">
+                </div>
+            `);
+        });
     });
 }
 
+// Function to save mappings
+$('#save-button').click(function() {
+    let mappings = [];
+    $('#mappings-list .mb-3').each(function(index, element) {
+        let item = $(element).find(`#item-${index}`).val();
+        let ingredients = $(element).find(`#ingredients-${index}`).val();
+        mappings.push({ item: item, ingredients: ingredients });
+    });
     
-
-
-
-        // Load missing ingredients on page load
-        loadMissingIngredients();
-
-        // Refresh missing ingredients every 30 seconds
-        setInterval(loadMissingIngredients, 30000); // 30 seconds interval
+    $.ajax({
+        url: '/save_data/Mappings',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(mappings),
+        success: function(response) {
+            if (response.success) {
+                alert('Mappings saved successfully!');
+            } else {
+                alert('Error saving mappings!');
+            }
+        }
+    });
+});
     });
 </script>
+
 
 </body>
 </html>

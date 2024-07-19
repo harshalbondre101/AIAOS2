@@ -103,6 +103,8 @@ $("#dynamic_content").on(
                 var errorMessage = JSON.parse(xhr.responseText).error;
                 console.log("Error: " + errorMessage);
             }
+
+            
         });
     }
 );

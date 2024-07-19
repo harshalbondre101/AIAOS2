@@ -234,11 +234,13 @@ def create_app(test_config=None):
             for item in menu:
                 item_name = item['item_name']
                 quantity = int(item['quantity'])
+                low_count = int(item['low_count'])
                 available = check_inventory_availability(item_name, quantity, inventory, mappings)
                 menu_with_availability.append({
                     'item_name': item_name,
                     'quantity': quantity,
-                    'available': available
+                    'available': available,
+                    'low_count': low_count
                 })
 
             return jsonify(menu_with_availability), 200
@@ -437,6 +439,8 @@ def create_app(test_config=None):
     def api_inventory():
         inventory_data = read_csv('inventory.csv')
         return jsonify(inventory_data)
+    
+    """
 
     @app.route('/manage_item', methods=['POST'])
     def manage_item():
@@ -465,6 +469,7 @@ def create_app(test_config=None):
 
         return jsonify({'status': 'success'})
 
+    """
 
     # --------------------- MENU HANDLING ---------------------- #
         
@@ -491,6 +496,7 @@ def create_app(test_config=None):
         menu_data = read_csv('menu.csv')
         return jsonify(menu_data)
     
+    """
 
     @app.route('/manage_menu_item', methods=['POST'])
     def manage_menu_item():
@@ -518,7 +524,7 @@ def create_app(test_config=None):
         write_csv('menu.csv', menu)
 
         return jsonify({'status': 'success'})
-    
+    """
 
     # Flask route to check if an item is present
     @app.route('/check_item', methods=['POST'])
@@ -541,24 +547,13 @@ def create_app(test_config=None):
         'Menu': 'menu.csv',
         'Mappings': 'mappings.csv'
     }
-    """
-    @app.route('/load_data/<filename>', methods=['GET'])
-    def load_data(filename):
-        if filename in file_paths:
-            file_path = file_paths[filename]
-            if file_path.endswith('.csv'):
-                df = pd.read_csv(file_path)
-            else:
-                df = pd.read_excel(file_path)
-            data = df.to_dict(orient='records')
-            return jsonify(data)
-        return jsonify({'error': 'File not found'}), 404
-        """
-    @app.route('/load_data/<filename>', methods=['GET'])
-    def load_data(filename):
-        if filename in file_paths:
-            file_path = file_paths[filename]
 
+    # Endpoint to load data from CSV files
+    @app.route('/load_data/<filename>', methods=['GET'])
+    def load_data(filename):
+        if filename in file_paths:
+            file_path = file_paths[filename]
+            
             # Additional logic for mappings.csv
             if filename == 'Mappings':
                 items = []
@@ -569,18 +564,19 @@ def create_app(test_config=None):
                         ingredients = row['ingredients']
                         items.append({'item': item_name, 'ingredients': ingredients})
                 return jsonify(items)
-
+            
             elif file_path.endswith('.csv'):
                 df = pd.read_csv(file_path)
             else:
                 df = pd.read_excel(file_path)
-
+            
             # Convert dataframe to dictionary format
             data = df.to_dict(orient='records')
             return jsonify(data)
-
+        
         return jsonify({'error': 'File not found'}), 404
 
+    # Endpoint to save data to CSV files
     @app.route('/save_data/<filename>', methods=['POST'])
     def save_data(filename):
         if filename in file_paths:
@@ -592,30 +588,10 @@ def create_app(test_config=None):
             else:
                 df.to_excel(file_path, index=False)
             return jsonify({'success': True})
+        
         return jsonify({'error': 'File not found'}), 404
 
-
-
     # TELEGRAM BOT
-
-    """
-    @app.route('/send_alert_bot')
-    def send_alert_bot():
-        try:
-            menu = read_csv('menu.csv')
-            MINIMUM_COUNT = int(request.args.get('min_count', 5))
-            
-            items_below_threshold = [item for item in menu if int(item['quantity']) < MINIMUM_COUNT]
-            
-            if items_below_threshold:
-                message = "Alert: The following items are below the threshold:\n"
-                message += "\n".join([f"{item['item_name']}: {item['quantity']}" for item in items_below_threshold])
-                send_telegram_message(message)
-            
-            return jsonify(items_below_threshold), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-            """
     
     @app.route('/send_alert_bot')
     def send_alert_bot():
@@ -666,8 +642,35 @@ def create_app(test_config=None):
             traceback.print_exc() 
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/send_order_complete_alert_bot', methods=['POST'])
+    def send_order_complete_alert_bot():
+        data = request.get_json()
+        table_id = data.get('table_id')
+        print(table_id)
+        
+        if not table_id:
+            return jsonify({"error": "Table ID is required"}), 400
 
+        # Fetch the order list for the specified table
+        get_order_list_url = 'http://localhost:5000/get_order_list'
+        headers = {'Content-Type': 'application/json'}
+        payload = {'table_id': table_id}
+        
+        response = requests.post(get_order_list_url, data=json.dumps(payload), headers=headers)
+        
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch order list"}), response.status_code
+        
+        order_details = response.json()
 
+        # Prepare the message to be sent to Telegram
+        message = f"Order details for table {table_id}:\n"
+        for item in order_details:
+            message += f"{item['item_name']}: {item['quantity']}\n"
+        
+        send_telegram_message(message)
+        
+        return jsonify({"message": "Order details sent to Telegram"}), 200
         
 
     @app.route('/get_items_below_threshold_and_missing_ingredients', methods=['GET'])
@@ -677,13 +680,14 @@ def create_app(test_config=None):
             inventory = read_csv('inventory.csv')
             mappings = read_csv('mappings.csv')
 
-            MINIMUM_COUNT = int(request.args.get('min_count', 5))
+            
 
             items_below_threshold_and_missing_ingredients = []
 
             for item in menu:
                 item_name = item['item_name']
                 item_quantity = int(item['quantity'])
+                MINIMUM_COUNT = int(item['low_count'])
 
                 item_info = {
                     'item_name': item_name,
@@ -719,7 +723,57 @@ def create_app(test_config=None):
                 items.append({'item': item_name, 'ingredients': ingredients})
 
         return render_template('display.html', items=items)
+    
+    @app.route('/save_update_inventory', methods=['POST'])
+    def save_update_inventory():
+        data = request.get_json()
 
+        # Load inventory DataFrame
+        inventory_df = pd.read_csv(file_paths['Inventory'])
+
+        # Print columns for debugging
+        print("Inventory DataFrame columns:", inventory_df.columns)
+
+        # Print incoming data for debugging
+        print("Received data:", data)
+
+        try:
+            # Update the row based on the 'ingredient' column
+            inventory_df.loc[inventory_df['ingredient'] == data['ingredient'], 'count'] = data['count']
+            inventory_df.to_csv(file_paths['Inventory'], index=False)
+            return jsonify({'message': 'Inventory updated successfully'}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+        
+
+        
+    @app.route('/save_update_menu', methods=['POST'])
+    def save_update_menu():
+        data = request.get_json()
+
+        try:
+            # Load menu DataFrame
+            menu_df = pd.read_csv(file_paths['Menu'])
+
+            # Print columns for debugging
+            print("Menu DataFrame columns:", menu_df.columns)
+
+            # Print incoming data for debugging
+            print("Received data:", data)
+
+            # Update the row based on the 'item_name' column
+            menu_df.loc[menu_df['item_name'] == data['item_name'], ['quantity', 'low_count']] = [
+                data['quantity'], data['low_count']
+            ]
+
+            # Save updated DataFrame back to CSV
+            menu_df.to_csv(file_paths['Menu'], index=False)
+
+            return jsonify({'message': 'Menu item updated successfully'}), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 
     return app, socket_io

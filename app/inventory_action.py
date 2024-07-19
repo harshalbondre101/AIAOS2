@@ -53,11 +53,11 @@ def calculate_missing_ingredients(item_name, quantity, inventory, mappings):
         qty = int(qty)
         inventory_item = next((i for i in inventory if i['ingredient'] == name), None)
         if not inventory_item:
-            missing_ingredients.append({'ingredient': name, 'required': qty * quantity, 'available': 0})
-        elif int(inventory_item['count']) < (qty * quantity):
+            missing_ingredients.append({'ingredient': name, 'required': qty, 'available': 0})
+        elif int(inventory_item['count']) < (qty):
             missing_ingredients.append({
                 'ingredient': name,
-                'required': qty * quantity,
+                'required': qty,
                 'available': int(inventory_item['count'])
             })
     return missing_ingredients

@@ -1,28 +1,28 @@
-count,ingredient
-5,Noodles
-96,Char Siu (Chinese BBQ pork)
-4500,Shrimp
-2700,Bean sprouts
-5000,Chives
-1994,Egg
-5000,Soy sauce
-5000,Oil
-1000,Seasonings
-2000,Irish whiskey
-2500,Cabernet Sauvignon wine
-2800,Gin
-1500,Grenache wine
-400,Coconut milk
-800,Various spices
-3250,Flour
-3700,Sugar
-1350,Cocoa powder
-1800,Butter
-1997,Eggs
-900,Baking powder
-4800,Milk or cream
-4850,Vanilla extract
-500,Guinness stout
-4900,Coffee
-700,Pandan (screwpine) leaves
-500,Cream cheese
+ingredient,count,low_count
+Noodles,5,15
+Char Siu (Chinese BBQ pork),9000,10
+Shrimp,1000,100
+Bean sprouts,200,10
+Chives,5000,10
+Egg,1994,10
+Soy sauce,5000,10
+Oil,5000,10
+Seasonings,1000,10
+Irish whiskey,2000,10
+Cabernet Sauvignon wine,2500,10
+Gin,2800,10
+Grenache wine,1500,10
+Coconut milk,400,10
+Various spices,800,10
+Flour,3250,10
+Sugar,3700,10
+Cocoa powder,1350,10
+Butter,1800,10
+Eggs,5000,10
+Baking powder,900,10
+Milk or cream,4800,10
+Vanilla extract,4850,10
+Guinness stout,500,10
+Coffee,4900,10
+Pandan (screwpine) leaves,700,10
+Cream cheese,500,10
