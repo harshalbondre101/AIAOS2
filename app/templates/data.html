@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Send Order Complete Alert</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
 <body>
     <div class="container mt-5">
-        <h2>Send Order Complete Alert</h2>
+        <h1 class="mb-4">Send Order Complete Alert</h1>
         <form id="orderAlertForm">
             <div class="form-group">
-                <label for="tableId">Table ID:</label>
-                <input type="text" class="form-control" id="tableId" name="tableId" required>
+                <label for="tableId">Table ID</label>
+                <input type="text" class="form-control" id="tableId" name="table_id" placeholder="Enter Table ID" required>
             </div>
             <button type="submit" class="btn btn-primary">Send Alert</button>
         </form>
@@ -21,13 +21,10 @@
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#orderAlertForm').on('submit', function(e) {
-                e.preventDefault();
-
-                let tableId = $('#tableId').val();
-                console.log("called")
-                console.log(tableId)
+        $(document).ready(function(){
+            $("#orderAlertForm").submit(function(event){
+                event.preventDefault();
+                var tableId = $("#tableId").val();
                 
                 $.ajax({
                     url: '/send_order_complete_alert_bot',
@@ -35,11 +32,10 @@
                     contentType: 'application/json',
                     data: JSON.stringify({ table_id: tableId }),
                     success: function(response) {
-                        $('#responseMessage').html('<div class="alert alert-success">' + response.message + '</div>');
+                        $("#responseMessage").html('<div class="alert alert-success">' + response.message + '</div>');
                     },
                     error: function(xhr, status, error) {
-                        let errorMessage = xhr.status + ': ' + xhr.statusText;
-                        $('#responseMessage').html('<div class="alert alert-danger">Error - ' + errorMessage + '</div>');
+                        $("#responseMessage").html('<div class="alert alert-danger">An error occurred: ' + xhr.responseText + '</div>');
                     }
                 });
             });

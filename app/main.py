@@ -266,10 +266,14 @@ def create_app(test_config=None):
             mappings = read_csv('mappings.csv')
             menu = read_csv('menu.csv')
 
+            data = []
+
             # Process each item in the order
             for item in order_details:
                 item_name = item.get('item_name')
                 quantity = item.get('quantity')
+
+                data.append(item_name)
                 
                 # Validate item format
                 if not item_name or quantity is None:
@@ -287,6 +291,10 @@ def create_app(test_config=None):
                         break
                 else:
                     return jsonify({"error": f"Item '{item_name}' not found in menu"}), 404
+                
+            message = f"Takeaway Order for order id: {order_id} is completed. Order Details are: {[i for i in data]}\n"
+                
+            send_telegram_message(message)
 
             # Write updated data back to CSV files
             write_csv('inventory.csv', inventory)
@@ -353,6 +361,10 @@ def create_app(test_config=None):
 
                 write_csv('inventory.csv', inventory)
                 write_csv('menu.csv', menu)
+                # Prepare the message to be sent to Telegram
+                message = f"Order for table {table_id} completed. Order details are: {[ i for i in extracted_data]}\n"
+                
+                send_telegram_message(message)
 
                 return jsonify({"message": "Success"}), 200
 
@@ -646,27 +658,9 @@ def create_app(test_config=None):
     def send_order_complete_alert_bot():
         data = request.get_json()
         table_id = data.get('table_id')
-        print(table_id)
-        
-        if not table_id:
-            return jsonify({"error": "Table ID is required"}), 400
-
-        # Fetch the order list for the specified table
-        get_order_list_url = 'http://localhost:5000/get_order_list'
-        headers = {'Content-Type': 'application/json'}
-        payload = {'table_id': table_id}
-        
-        response = requests.post(get_order_list_url, data=json.dumps(payload), headers=headers)
-        
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch order list"}), response.status_code
-        
-        order_details = response.json()
-
+    
         # Prepare the message to be sent to Telegram
-        message = f"Order details for table {table_id}:\n"
-        for item in order_details:
-            message += f"{item['item_name']}: {item['quantity']}\n"
+        message = f"Order details for table {table_id} completed.\n"
         
         send_telegram_message(message)
         
