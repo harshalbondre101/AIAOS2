@@ -26,6 +26,27 @@ class GetOrder:
         formatted_order_items = [{'item_name': item['item_name'], 'quantity': item['item_quantity']} for item in order_items]
         
         return formatted_order_items
+    
+    @staticmethod
+    def get_order_status(order_id: int) -> list:
+        """Get details of a specific order by ID
+
+        Parameters
+        ----------
+        order_id : int
+            The ID of the order to retrieve
+
+        Returns
+        -------
+        order_details : list
+            The list of items with their names and quantities
+        """
+        order_details = get_order(order_id=order_id)
+        #order_items = order_details['order_items']
+        
+        #formatted_order_items = [{'item_name': item['item_name'], 'quantity': item['item_quantity']} for item in order_items]
+        
+        return order_details
 
 
 class TableService:

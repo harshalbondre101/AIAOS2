@@ -1,7 +1,7 @@
 import os
 from zoneinfo import ZoneInfo
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_restful import Api
 from flask_socketio import SocketIO
 
@@ -10,7 +10,7 @@ from app.api_config import APIConfig
 from app.api_resources import (CancelItemAPI, CancelOrderAPI, CreateOrderAPI,
                                FinishItemAPI, FinishOrderAPI,
                                GetOrderInRangeAPI, GetSingleTableAPI,
-                               GetUserAPI, RefundOrderAPI, UserNameAPI, InsertUserActionsAPI,OrderActionsAPI)
+                               GetUserAPI, RefundOrderAPI, UserNameAPI, InsertUserActionsAPI,OrderActionsAPI,OrderStatusAPI)
 from app.cache import cache
 from app.services import OrderService, TableService, GetOrder
 from app.utils import Utils
@@ -21,6 +21,10 @@ from app.inventory_action import *
 from flask_caching import Cache
 from app.telegram_bot import *
 import pandas as pd
+
+import qrcode
+from io import BytesIO
+
 
 def create_app(test_config=None):
     print("called")
@@ -199,10 +203,7 @@ def create_app(test_config=None):
     def data():
         return render_template('data.html')
     
-    @app.route('/check')
-    def check():
-        return render_template('check.html')
-    
+        
     @app.route('/get_missing_ingredients', methods=['GET'])
     def get_missing_ingredients():
         try:
@@ -452,36 +453,7 @@ def create_app(test_config=None):
         inventory_data = read_csv('inventory.csv')
         return jsonify(inventory_data)
     
-    """
 
-    @app.route('/manage_item', methods=['POST'])
-    def manage_item():
-        item_name = request.form.get('ingredient')
-        quantity = request.form.get('count')
-
-        inventory = read_csv('inventory.csv')
-
-        for item in inventory:
-            if item['ingredient'] == item_name:
-                item['count'] = quantity
-                break
-        else:
-            inventory.append({'ingredient': item_name, 'count': quantity})
-
-        write_csv('inventory.csv', inventory)
-
-        return jsonify({'status': 'success'})
-
-    @app.route('/delete_item', methods=['POST'])
-    def delete_item():
-        item_name = request.form.get('delete_item_name')
-        inventory = read_csv('inventory.csv')
-        inventory = [item for item in inventory if item['ingredient'] != item_name]
-        write_csv('inventory.csv', inventory)
-
-        return jsonify({'status': 'success'})
-
-    """
 
     # --------------------- MENU HANDLING ---------------------- #
         
@@ -508,35 +480,6 @@ def create_app(test_config=None):
         menu_data = read_csv('menu.csv')
         return jsonify(menu_data)
     
-    """
-
-    @app.route('/manage_menu_item', methods=['POST'])
-    def manage_menu_item():
-        item_name = request.form.get('menu-item')
-        quantity = request.form.get('quantity')
-
-        menu = read_csv('menu.csv')
-
-        for item in menu:
-            if item['item_name'] == item_name:
-                item['quantity'] = quantity
-                break
-        else:
-            menu.append({'item_name': item_name, 'quantity': quantity})
-
-        write_csv('menu.csv', menu)
-
-        return jsonify({'status': 'success'})
-
-    @app.route('/delete_menu_item', methods=['POST'])
-    def delete_menu_item():
-        item_name = request.form.get('delete_menu_item')
-        menu = read_csv('menu.csv')
-        menu = [item for item in menu if item['item_name'] != item_name]
-        write_csv('menu.csv', menu)
-
-        return jsonify({'status': 'success'})
-    """
 
     # Flask route to check if an item is present
     @app.route('/check_item', methods=['POST'])
@@ -768,6 +711,79 @@ def create_app(test_config=None):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+        
+    
+    # QR CODES
+
+    @app.route('/generate_qr', methods=['POST'])
+    def generate_qr():
+        # Get the order ID from the request
+        order_id = request.form.get('order_id')
+
+        if not order_id:
+            return "Order ID is required", 400
+
+        # Construct the URL that the QR code will redirect to
+        url = f'http://https://aiaos2.onrender.com/order-status-page?order_id={order_id}'
+
+        # Create a QR code from the URL
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill='black', back_color='white')
+
+        # Save the QR code to a BytesIO object
+        img_io = BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+
+        # Return the QR code image as a response
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='qr_code.png')
+
+    # Order status codes
+    IN_PROGRESS_ORDER_STATUS = "0"
+    FINISHED_ORDER_STATUS = "1"
+    CANCELED_ORDER_STATUS = "2"
+    REFUNDED_ORDER_STATUS = "3"
+
+    @app.route('/order-status-page', methods=['GET'])
+    def order_status_page():
+        return render_template('order_status.html')
+    
+    @app.route('/order-status', methods=['GET'])
+    def get_order_status():
+        """API to get order status based on order ID"""
+        order_id = request.args.get('order_id', type=int)
+
+        if order_id is not None:
+            try:
+                # Assuming GetOrder.get_order_status(order_id) is a function that retrieves order details
+                order_details = GetOrder.get_order_status(order_id=order_id)
+
+                relevant_details = {
+                    'order_id': order_details.get('order_id'),
+                    'order_creation_date': order_details.get('order_creation_date'),
+                    'order_finish_date': order_details.get('order_finish_date'),
+                    'order_items': order_details.get('order_items'),
+                    'order_mode': order_details.get('order_mode'),
+                    'order_status': order_details.get('order_status'),
+                    'order_table': order_details.get('order_table')
+                }
+
+                return jsonify({
+                    'order_id': order_id,
+                    'order_details': relevant_details
+                }), 200
+            except Exception as e:
+                return jsonify({'error': f'Order with ID {order_id} not found: {str(e)}'}), 400
+
+        return jsonify({'error': 'No order_id provided'}), 400
 
 
     return app, socket_io

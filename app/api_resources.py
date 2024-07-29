@@ -794,3 +794,50 @@ class InsertUserActionsAPI(Resource):
             "message": "Actions received  ",
             "order_id": order_id
         }, 200
+
+
+# add
+
+class OrderStatusAPI(Resource):
+    """API to get the status of all orders
+
+    Methods
+    -------
+    get():
+        Handle OrderStatus API GET request from the client
+    """
+
+    def get(self) -> Tuple[dict, int]:
+        """Handle OrderStatus API GET request from the client
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        response (Tuple[dict, int]):
+
+            In case of successfully: Include an `order_list` response list and HTTP `status_code` 200.
+            - `order_list` (list):
+                List of orders with their statuses.
+            - `status_code` (int):
+                Successful code: 200
+
+            In case of failure: Include a `failed` response dictionary and HTTP `status_code` 400.
+            - `failed` (dict):
+                Include `message` and `error` - error details.
+            - `status_code` (int):
+                Failure code: 400
+        """
+        try:
+            order_list = OrderService.get_take_away_orders_service()()
+        except Exception as e:
+            return {
+                "message": "Failed to retrieve orders",
+                "error": str(e)
+            }, 400
+
+        return {
+            "order_list": order_list
+        }, 200
