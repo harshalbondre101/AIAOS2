@@ -342,8 +342,11 @@ def create_app(test_config=None):
                 mappings = read_csv('mappings.csv')
                 menu = read_csv('menu.csv')
 
+                order_items = []
+
                 for item in extracted_data:
                     item_name = item.get('item_name')
+                    order_items.append(item_name)
                     quantity = item.get('quantity')
 
                     if not item_name or quantity is None:
@@ -363,7 +366,7 @@ def create_app(test_config=None):
                 write_csv('inventory.csv', inventory)
                 write_csv('menu.csv', menu)
                 # Prepare the message to be sent to Telegram
-                message = f"Order for table {table_id} completed. Order details are: {[ i for i in extracted_data]}\n"
+                message = f"Order for table {table_id} completed. Order details are: {[ i for i in order_items]}\n"
                 
                 send_telegram_message(message)
 
