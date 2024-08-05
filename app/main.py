@@ -727,7 +727,7 @@ def create_app(test_config=None):
             return "Order ID is required", 400
 
         # Construct the URL that the QR code will redirect to
-        url = f'http://https://aiaos2.onrender.com/order-status-page?order_id={order_id}'
+        url = f'aiaos2.onrender.com/order-status-page?order_id={order_id}'
 
         # Create a QR code from the URL
         qr = qrcode.QRCode(
