@@ -21,26 +21,58 @@
             margin-top: 20px;
         }
         .card-header {
-            background-color: #007bff;
-            color: white;
+            background-color: #e9ecef;
+            color: #000;
         }
         .card-body {
-            background-color: #e9ecef;
+            background-color: #f8f9fa;
         }
         .item-status {
             font-size: 0.9rem;
             font-weight: bold;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            color: #fff;
+        }
+        .status-in-progress {
+            background-color: #007bff;
+        }
+        .status-finished {
+            background-color: #28a745;
+        }
+        .status-canceled {
+            background-color: #dc3545;
+        }
+        .status-refunded {
+            background-color: #6c757d;
         }
         .order-id {
-            color: red;
             font-weight: bold;
             font-size: 1.5rem;
+        }
+        .order-info {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .notification {
+            position: fixed;
+            top: 0;
+            right: 0;
+            margin: 1rem;
+            z-index: 1050; /* Bootstrap's z-index for alerts */
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
+    <div class="container mt-5 position-relative">
         <h1 class="text-center mb-4">Order Status</h1>
+        <div id="notification" class="notification"></div>
         <div id="order-details" class="mt-3">
             <div class="text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -48,9 +80,17 @@
                 </div>
             </div>
         </div>
+        <div class="order-info">
+            <p><strong>Order Creation Date:</strong> <span id="order-creation-date"></span></p>
+            <p><strong>Order Finish Date:</strong> <span id="order-finish-date"></span></p>
+        </div>
+        <!-- Audio element for notification sound -->
+        <audio id="notification-sound" src="static\notification.mp3" preload="auto"></audio>
     </div>
 
     <script>
+
+    
         document.addEventListener('DOMContentLoaded', function() {
             const params = new URLSearchParams(window.location.search);
             const orderId = params.get('order_id');
@@ -73,14 +113,30 @@
                             "3": "Refunded"
                         };
 
+                        // Show notification for completed orders
+                        if (orderDetails.order_status === "1") {
+                            const notification = document.createElement('div');
+                            notification.className = 'alert alert-success alert-dismissible fade show';
+                            notification.role = 'alert';
+                            notification.innerHTML = `
+                                <strong>Order ${data.order_id} is completed!</strong> You can now pick it up.
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            `;
+                            document.getElementById('notification').appendChild(notification);
+
+                            // Play the notification sound
+                            const sound = document.getElementById('notification-sound');
+                            sound.play();
+                        }
+
                         let detailsHtml = `
                             <div class="card">
                                 <div class="card-header">
                                     <span class="order-id">Order ID: ${data.order_id}</span>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Order Creation Date:</strong> ${orderDetails.order_creation_date}</p>
-                                    <p><strong>Order Finish Date:</strong> ${orderDetails.order_finish_date}</p>
                                     <p><strong>Order Mode:</strong> ${orderDetails.order_mode}</p>
                                     <p><strong>Order Table:</strong> ${orderDetails.order_table}</p>
                                     <p><strong>Order Status:</strong> ${statusCodes[orderDetails.order_status]}</p>
@@ -95,13 +151,17 @@
                                 <div class="order-item">
                                     <p><strong>Item Name:</strong> ${item.item_name}</p>
                                     <p><strong>Quantity:</strong> ${item.item_quantity}</p>
-                                    <p class="item-status"><strong>Status:</strong> ${statusCodes[item.item_status]}</p>
+                                    <p class="item-status status-${statusCodes[item.item_status].toLowerCase().replace(/ /g, '-')}" >
+                                        <strong>Status:</strong> ${statusCodes[item.item_status]}
+                                    </p>
                                 </div>
                             `;
                         });
 
                         detailsHtml += `</div>`;
                         document.getElementById('order-details').innerHTML = detailsHtml;
+                        document.getElementById('order-creation-date').textContent = orderDetails.order_creation_date;
+                        document.getElementById('order-finish-date').textContent = orderDetails.order_finish_date;
                     }
                 })
                 .catch(error => {
